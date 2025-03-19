@@ -1,0 +1,100 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+// Функция для расшифровки текста с заданной перестановкой
+string decrypt(const vector<string>& blocks, const vector<int>& key) {
+    string decrypted_text;
+    for (const auto& block : blocks) {
+        if (block.length() < key.size()) {
+            decrypted_text += block; // Неполные блоки не изменяем
+            continue;
+        }
+        // Применяем перестановку
+        string decrypted_block(key.size(), ' ');
+        for (size_t i = 0; i < key.size(); ++i) {
+            decrypted_block[i] = block[key[i] - 1];
+        }
+        decrypted_text += decrypted_block;
+    }
+    return decrypted_text;
+}
+
+// Функция для оценки осмысленности текста
+int evaluate_text(const string& text) {
+    // Частотный анализ биграмм
+    vector<string> common_bigrams = {"ст", "но", "то", "на", "ен", "ов", "ни", "ра", "во", "ко"};
+    int score = 0;
+    for (size_t i = 0; i < text.length() - 1; ++i) {
+        string bigram = text.substr(i, 2);
+        if (find(common_bigrams.begin(), common_bigrams.end(), bigram) != common_bigrams.end()) {
+            score += 1;
+        }
+    }
+    return score;
+}
+
+// Функция для генерации всех перестановок
+void generate_permutations(vector<vector<int>>& permutations, vector<int>& current, vector<bool>& used) {
+    if (current.size() == used.size()) {
+        permutations.push_back(current);
+        return;
+    }
+    for (size_t i = 0; i < used.size(); ++i) {
+        if (!used[i]) {
+            used[i] = true;
+            current.push_back(i + 1); // Перестановки начинаются с 1
+            generate_permutations(permutations, current, used);
+            current.pop_back();
+            used[i] = false;
+        }
+    }
+}
+
+int main() {
+    // Зашифрованный текст
+    string encrypted_text = "вз оЯш вл елужчкауПе ч.ьылба  ркаож тоапнла,н еи нве йарви л оябсе д,одвьнлоо скооршй ыднлбе дяновк.я артуСхна  ав меосиопвр о оытсвалчае,точ  о галнуя,а хнсл ыеш. тЧитбы лоо нсе йелда т Я? ьоатрибл кя сспоемлуко т,ой ысрил епдед епрею ьич дколпаваылд ог овнхв оьрт.с о";
+
+    // Длина блока
+    const int block_size = 6;
+
+    // Разбиваем текст на блоки
+    vector<string> blocks;
+    for (size_t i = 0; i < encrypted_text.length(); i += block_size) {
+        blocks.push_back(encrypted_text.substr(i, block_size));
+    }
+
+    // Генерация всех перестановок длины 6
+    vector<vector<int>> permutations;
+    vector<int> current;
+    vector<bool> used(block_size, false);
+    generate_permutations(permutations, current, used);
+
+    // Перебор всех возможных перестановок
+    int best_score = 0;
+    vector<int> best_key;
+    string best_text;
+
+    for (const auto& key : permutations) {
+        string decrypted_text = decrypt(blocks, key);
+        int score = evaluate_text(decrypted_text);
+        if (score > best_score) {
+            best_score = score;
+            best_key = key;
+            best_text = decrypted_text;
+        }
+    }
+
+    // Вывод результата
+    cout << "Найденный ключ: ";
+    for (int k : best_key) {
+        cout << k << " ";
+    }
+    cout << "\nРасшифрованный текст:\n";
+    cout << best_text << "\n";
+
+    return 0;
+}
